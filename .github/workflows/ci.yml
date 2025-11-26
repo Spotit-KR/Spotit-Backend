@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  # PR이 생성되거나 업데이트될 때 실행
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+  # main/master 브랜치에 푸시될 때 실행 (머지 시)
+  push:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 24
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25-ea'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            build/test-results/**/*.xml
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: build/reports/tests/test/
+
+      - name: Check test coverage
+        run: ./gradlew test jacocoTestReport --no-daemon
+        continue-on-error: true
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: build/reports/jacoco/

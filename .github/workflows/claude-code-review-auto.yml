@@ -1,0 +1,83 @@
+name: Claude Code Review (Auto)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.kt'
+      - '**.java'
+      - '**.kts'
+      - 'src/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  claude-auto-review:
+    runs-on: ubuntu-latest
+    name: Claude AI Auto Review
+
+    steps:
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            이 Pull Request의 코드를 상세히 리뷰해주세요.
+
+            ## 리뷰 포커스
+
+            ### 1. 아키텍처 원칙 ⚙️
+            - Clean Architecture 계층 분리 확인 (domain, application, infrastructure, presentation)
+            - Domain-Driven Design 패턴 준수 여부
+            - 도메인 모델과 JPA 엔티티가 분리되어 있는지 확인
+            - Repository 패턴이 올바르게 구현되었는지
+
+            ### 2. 코드 품질 ✨
+            - YAGNI 원칙 준수 (사용하지 않는 함수가 있는지)
+            - Kotlin 코딩 컨벤션 준수
+            - null safety가 적절히 사용되었는지
+            - 코드 가독성 및 유지보수성
+            - 네이밍이 명확한지
+
+            ### 3. 보안 🔒
+            - SQL Injection 취약점 확인
+            - XSS (Cross-Site Scripting) 취약점
+            - 인증/인가 로직의 정확성
+            - 민감 정보 노출 여부
+            - Spring Security 설정 오류
+
+            ### 4. 비즈니스 로직 💼
+            - 비즈니스 규칙이 도메인 모델에 올바르게 구현되었는지
+            - 예외 처리가 적절한지
+            - 트랜잭션 관리가 올바른지
+            - 도메인 이벤트가 필요한 곳에서 사용되는지
+
+            ### 5. 테스트 🧪
+            - 중요한 로직에 테스트가 있는지
+            - 테스트가 의미 있는지
+            - Given-When-Then 패턴을 따르는지
+            - 결과 중심으로 테스트하는지 (구현 세부사항 테스트 지양)
+
+            ## 리뷰 형식
+
+            각 파일별로 다음과 같이 리뷰해주세요:
+
+            **파일명**: `src/main/kotlin/...`
+
+            ⚠️ **중요한 문제**: [문제 설명 및 수정 제안]
+            💡 **개선 제안**: [개선 방법]
+            ✅ **좋은 점**: [칭찬할 만한 부분]
+
+            마지막에 전체 요약을 작성해주세요:
+            - 주요 변경사항
+            - 발견된 문제점
+            - 개선이 필요한 부분
+            - 전반적인 코드 품질 평가
+
+            한국어로 명확하고 친절하게 리뷰를 작성해주세요.
+          claude_args: |
+            --max-turns 15
+            --model claude-sonnet-4-5-20250929
