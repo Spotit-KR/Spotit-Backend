@@ -10,6 +10,8 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
+  id-token: write
+  actions: read # Required for Claude to read CI results on PRs
 
 jobs:
   claude-interactive:
@@ -21,6 +23,10 @@ jobs:
       contains(github.event.comment.body, '@claude')
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
       - name: Claude Code Action
         uses: anthropics/claude-code-action@v1
         with:
